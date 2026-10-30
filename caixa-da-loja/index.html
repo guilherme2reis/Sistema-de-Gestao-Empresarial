@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0D47A1">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Caixa da Loja">
+<title>Caixa da Loja</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  :root{
+    --bg:#F4F6F9; --card:#FFFFFF; --ink:#111827; --muted:#4B5563; --line:#D1D5DB;
+    --entra:#0D47A1; --entra-soft:#E3F0FF;
+    --sai:#B34700;   --sai-soft:#FFF0E0;
+    --ok:#0D47A1;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:20px;line-height:1.35}
+  body{padding:0 0 env(safe-area-inset-bottom)}
+  button{font:inherit;color:inherit;border:0;cursor:pointer}
+  .wrap{max-width:560px;margin:0 auto;padding:14px 16px 32px}
+  .tela{display:none}.tela.ativa{display:block}
+
+  header.topo{display:flex;align-items:center;justify-content:space-between;margin:4px 0 12px}
+  header.topo h1{font-size:26px;margin:0;letter-spacing:.5px}
+  .btn-engrenagem{background:none;font-size:30px;padding:6px 10px;border-radius:12px}
+
+  /* Navegação de dia */
+  .dia{display:flex;align-items:center;justify-content:space-between;background:var(--card);
+    border-radius:16px;padding:8px;margin-bottom:12px;border:2px solid var(--line)}
+  .dia button{background:#E5E7EB;font-size:26px;font-weight:700;width:58px;height:58px;border-radius:12px}
+  .dia button:disabled{opacity:.3}
+  .dia .rotulo{text-align:center;font-weight:700;font-size:21px}
+  .dia .rotulo small{display:block;font-weight:400;color:var(--muted);font-size:17px}
+
+  /* Resumo */
+  .resumo{background:var(--card);border-radius:16px;padding:14px 16px;border:2px solid var(--line);margin-bottom:16px}
+  .linha{display:flex;justify-content:space-between;align-items:baseline;padding:4px 0;font-size:21px}
+  .linha b{font-size:24px}
+  .linha.ent b{color:var(--entra)} .linha.sai b{color:var(--sai)}
+  .linha.saldo{border-top:2px dashed var(--line);margin-top:6px;padding-top:10px}
+  .linha.saldo b{font-size:30px}
+
+  /* Botões principais */
+  .grandes{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+  .grande{border-radius:20px;padding:22px 8px;font-size:26px;font-weight:800;color:#fff;
+    display:flex;flex-direction:column;align-items:center;gap:4px;box-shadow:0 4px 0 rgba(0,0,0,.25)}
+  .grande:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.25)}
+  .grande .ic{font-size:52px;line-height:1;font-weight:900}
+  .grande.ent{background:var(--entra)} .grande.sai{background:var(--sai)}
+  .enviar{width:100%;background:#1F2937;color:#fff;border-radius:18px;padding:18px;font-size:23px;font-weight:700;margin-bottom:20px}
+
+  /* Lista */
+  h2{font-size:21px;margin:8px 0 10px;color:var(--muted)}
+  .item{display:flex;align-items:center;gap:10px;background:var(--card);border-radius:14px;padding:12px;
+    margin-bottom:8px;border-left:10px solid var(--line)}
+  .item.E{border-left-color:var(--entra)} .item.S{border-left-color:var(--sai)}
+  .item .tp{font-size:15px;font-weight:800;padding:3px 8px;border-radius:8px;white-space:nowrap}
+  .item.E .tp{background:var(--entra-soft);color:var(--entra)} .item.S .tp{background:var(--sai-soft);color:var(--sai)}
+  .item .info{flex:1;min-width:0}
+  .item .val{font-size:23px;font-weight:800}
+  .item .det{font-size:16px;color:var(--muted);overflow-wrap:anywhere}
+  .item .apagar{background:#F3F4F6;border:2px solid var(--line);border-radius:10px;padding:10px 12px;font-size:16px;font-weight:700}
+  .vazio{text-align:center;color:var(--muted);padding:20px;background:var(--card);border-radius:14px}
+
+  /* Tela de lançamento */
+  .cab-lanc{display:flex;align-items:center;gap:10px;margin:4px 0 12px}
+  .voltar{background:#E5E7EB;border-radius:12px;padding:12px 16px;font-size:20px;font-weight:700}
+  .cab-lanc h1{margin:0;font-size:26px}
+  .visor{background:var(--card);border:3px solid var(--line);border-radius:16px;padding:12px 16px;text-align:right;margin-bottom:10px}
+  .visor small{display:block;text-align:left;color:var(--muted);font-size:17px}
+  .visor .num{font-size:46px;font-weight:800;letter-spacing:1px}
+  .lanc-E .visor{border-color:var(--entra)} .lanc-E .visor .num{color:var(--entra)}
+  .lanc-S .visor{border-color:var(--sai)}   .lanc-S .visor .num{color:var(--sai)}
+  .teclado{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+  .teclado button{background:var(--card);border:2px solid var(--line);border-radius:14px;height:64px;font-size:30px;font-weight:700}
+  .teclado button:active{background:#E5E7EB}
+  .teclado .apaga{font-size:22px;background:#F3F4F6}
+  .pergunta{font-weight:700;margin:6px 0 8px}
+  .chips{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+  .chip{background:var(--card);border:3px solid var(--line);border-radius:14px;padding:14px 6px;font-size:20px;font-weight:700}
+  .chip.sel{border-color:#111827;background:#111827;color:#fff}
+  .chip.sel::before{content:"✔ "}
+  .obs{width:100%;font:inherit;font-size:20px;padding:14px;border-radius:14px;border:2px solid var(--line);margin-bottom:14px;background:var(--card)}
+  .salvar{width:100%;border-radius:18px;padding:20px;font-size:26px;font-weight:800;color:#fff;box-shadow:0 4px 0 rgba(0,0,0,.25)}
+  .lanc-E .salvar{background:var(--entra)} .lanc-S .salvar{background:var(--sai)}
+
+  /* Enviar */
+  .periodos{display:grid;gap:10px;margin-bottom:16px}
+  .periodos .chip{font-size:22px;padding:18px}
+  .previa{background:var(--card);border-radius:14px;padding:14px;border:2px solid var(--line);margin-bottom:16px;font-size:19px}
+  .acao{width:100%;border-radius:18px;padding:18px;font-size:22px;font-weight:800;margin-bottom:12px;color:#fff}
+  .acao.zap{background:#075E54} .acao.arq{background:#1F2937}
+  .dica{color:var(--muted);font-size:17px;margin-top:4px}
+
+  /* Configurações */
+  label.cfg{display:block;font-weight:700;margin:12px 0 6px}
+  .cfg-input{width:100%;font:inherit;font-size:22px;padding:14px;border-radius:14px;border:2px solid var(--line)}
+  .perigo{width:100%;background:#fff;border:3px solid #7F1D1D;color:#7F1D1D;border-radius:16px;padding:14px;font-size:19px;font-weight:700;margin-top:24px}
+
+  /* Avisos */
+  .toast{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%) scale(.9);background:#111827;color:#fff;
+    padding:22px 30px;border-radius:20px;font-size:28px;font-weight:800;opacity:0;pointer-events:none;transition:.2s;z-index:50;text-align:center}
+  .toast.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  .modal-fundo{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:40;padding:16px}
+  .modal-fundo.on{display:flex}
+  .modal{background:#fff;border-radius:20px;padding:22px;max-width:460px;width:100%}
+  .modal p{font-size:22px;margin:0 0 18px}
+  .modal .bts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .modal .bts button{padding:16px;border-radius:14px;font-size:21px;font-weight:800}
+  .modal .nao{background:#E5E7EB} .modal .sim{background:#7F1D1D;color:#fff}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ===== TELA INICIAL ===== -->
+  <section id="tela-inicio" class="tela ativa">
+    <header class="topo">
+      <h1>🏪 CAIXA DA LOJA</h1>
+      <button class="btn-engrenagem" onclick="abrirConfig()" aria-label="Configurações">⚙️</button>
+    </header>
+
+    <div class="dia">
+      <button id="dia-ant" onclick="mudarDia(-1)" aria-label="Dia anterior">◀</button>
+      <div class="rotulo" id="dia-rotulo"></div>
+      <button id="dia-prox" onclick="mudarDia(1)" aria-label="Próximo dia">▶</button>
+    </div>
+
+    <div class="resumo">
+      <div class="linha ent"><span>➕ Entrou</span><b id="r-ent">R$ 0,00</b></div>
+      <div class="linha sai"><span>➖ Saiu</span><b id="r-sai">R$ 0,00</b></div>
+      <div class="linha saldo"><span>Saldo do dia</span><b id="r-saldo">R$ 0,00</b></div>
+    </div>
+
+    <div class="grandes">
+      <button class="grande ent" onclick="abrirLanc('E')"><span class="ic">+</span>ENTRADA</button>
+      <button class="grande sai" onclick="abrirLanc('S')"><span class="ic">−</span>SAÍDA</button>
+    </div>
+
+    <button class="enviar" onclick="abrirEnviar()">📤 ENVIAR RELATÓRIO</button>
+
+    <h2 id="lista-titulo">Lançamentos do dia</h2>
+    <div id="lista"></div>
+  </section>
+
+  <!-- ===== TELA LANÇAMENTO ===== -->
+  <section id="tela-lanc" class="tela">
+    <div class="cab-lanc">
+      <button class="voltar" onclick="irInicio()">◀ Voltar</button>
+      <h1 id="lanc-titulo">ENTRADA</h1>
+    </div>
+
+    <div class="visor"><small>Valor</small><div class="num" id="visor">R$ 0,00</div></div>
+    <div class="teclado" id="teclado"></div>
+
+    <div class="pergunta" id="pergunta"></div>
+    <div class="chips" id="chips"></div>
+
+    <input class="obs" id="obs" type="text" placeholder="Observação (se quiser)" maxlength="80" autocomplete="off">
+
+    <button class="salvar" onclick="salvar()">✔ SALVAR</button>
+  </section>
+
+  <!-- ===== TELA ENVIAR ===== -->
+  <section id="tela-enviar" class="tela">
+    <div class="cab-lanc">
+      <button class="voltar" onclick="irInicio()">◀ Voltar</button>
+      <h1>ENVIAR</h1>
+    </div>
+    <div class="pergunta">Qual período?</div>
+    <div class="periodos" id="periodos"></div>
+    <div class="previa" id="previa"></div>
+    <button class="acao zap" onclick="enviarWhats()">🟢 ENVIAR NO WHATSAPP</button>
+    <button class="acao arq" onclick="enviarArquivo()">📎 ENVIAR PLANILHA (arquivo)</button>
+    <div class="dica" id="dica-envio"></div>
+  </section>
+
+  <!-- ===== TELA CONFIG ===== -->
+  <section id="tela-config" class="tela">
+    <div class="cab-lanc">
+      <button class="voltar" onclick="salvarConfig()">◀ Voltar</button>
+      <h1>Ajustes</h1>
+    </div>
+    <label class="cfg" for="cfg-fone">WhatsApp de quem recebe o relatório (com DDD)</label>
+    <input class="cfg-input" id="cfg-fone" type="tel" inputmode="numeric" placeholder="Ex.: 28 99999-9999">
+    <label class="cfg" for="cfg-nome">Nome da loja</label>
+    <input class="cfg-input" id="cfg-nome" type="text" placeholder="Ex.: Loja da Tereza">
+    <button class="salvar" style="background:#0D47A1;margin-top:20px" onclick="salvarConfig()">✔ SALVAR AJUSTES</button>
+    <button class="perigo" onclick="copiaSeguranca()">💾 Baixar cópia de segurança</button>
+    <p class="dica" id="info-versao"></p>
+  </section>
+
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="modal-fundo" id="modal">
+  <div class="modal">
+    <p id="modal-txt"></p>
+    <div class="bts">
+      <button class="nao" onclick="fecharModal(false)">NÃO</button>
+      <button class="sim" onclick="fecharModal(true)">SIM</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   CAIXA DA LOJA — v1.0
+   Dados ficam salvos no próprio celular (localStorage).
+   Estrutura de cada lançamento (pensada para integrar depois):
+   { id, tipo:'E'|'S', valor:centavos, forma, categoria, obs, data:'AAAA-MM-DD', hora:'HH:MM', criadoEm:ISO }
+   ========================================================= */
+const VERSAO = '1.0';
+const K_DADOS = 'caixaLoja.lancamentos.v1';
+const K_CFG   = 'caixaLoja.config.v1';
+
+const FORMAS = ['Dinheiro','Pix','Cartão','Fiado'];
+const CATEGORIAS = ['Compra de mercadoria','Conta (luz, água...)','Retirada','Outros'];
+
+/* ---------- armazenamento seguro ---------- */
+function ler(chave, padrao){ try{ const v = localStorage.getItem(chave); return v ? JSON.parse(v) : padrao; }catch(e){ return padrao; } }
+function gravar(chave, valor){ try{ localStorage.setItem(chave, JSON.stringify(valor)); return true; }catch(e){ alert('Não foi possível salvar. Avise o Guilherme.'); return false; } }
+if (navigator.storage && navigator.storage.persist) { navigator.storage.persist().catch(()=>{}); }
+
+let dados = ler(K_DADOS, []);
+let cfg = ler(K_CFG, { fone:'', nome:'' });
+
+/* ---------- utilidades ---------- */
+const $ = id => document.getElementById(id);
+const fmt = c => (c/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const hojeISO = () => isoData(new Date());
+function isoData(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function dataDeISO(s){ const [a,m,d] = s.split('-').map(Number); return new Date(a, m-1, d); }
+function dataBR(s){ const [a,m,d] = s.split('-'); return d+'/'+m+'/'+a; }
+const SEMANA = ['domingo','segunda','terça','quarta','quinta','sexta','sábado'];
+
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('on'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('on'),1400); }
+let _resolveModal=null;
+function confirmar(txt){ $('modal-txt').textContent=txt; $('modal').classList.add('on'); return new Promise(r=>_resolveModal=r); }
+function fecharModal(v){ $('modal').classList.remove('on'); if(_resolveModal){ _resolveModal(v); _resolveModal=null; } }
+
+function mostrar(id){ document.querySelectorAll('.tela').forEach(t=>t.classList.remove('ativa')); $(id).classList.add('ativa'); window.scrollTo(0,0); }
+
+/* ---------- tela inicial ---------- */
+let diaVisto = hojeISO();
+
+function mudarDia(n){
+  const d = dataDeISO(diaVisto); d.setDate(d.getDate()+n);
+  const novo = isoData(d);
+  if (novo > hojeISO()) return;
+  diaVisto = novo; desenharInicio();
+}
+
+function totais(lista){
+  let e=0,s=0; lista.forEach(l=>{ if(l.tipo==='E') e+=l.valor; else s+=l.valor; });
+  return {e,s,saldo:e-s};
+}
+
+function desenharInicio(){
+  const hoje = hojeISO();
+  const d = dataDeISO(diaVisto);
+  let titulo = diaVisto===hoje ? 'HOJE' : (diaVisto===isoData(new Date(Date.now()-864e5)) ? 'ONTEM' : SEMANA[d.getDay()].toUpperCase());
+  $('dia-rotulo').innerHTML = titulo + '<small>' + dataBR(diaVisto) + '</small>';
+  $('dia-prox').disabled = diaVisto >= hoje;
+
+  const doDia = dados.filter(l=>l.data===diaVisto).sort((a,b)=> b.criadoEm.localeCompare(a.criadoEm));
+  const t = totais(doDia);
+  $('r-ent').textContent = fmt(t.e);
+  $('r-sai').textContent = fmt(t.s);
+  $('r-saldo').textContent = (t.saldo<0?'− ':'') + fmt(Math.abs(t.saldo));
+
+  const lista = $('lista');
+  if(!doDia.length){ lista.innerHTML = '<div class="vazio">Nenhum lançamento neste dia.</div>'; return; }
+  lista.innerHTML = doDia.map(l=>{
+    const det = [l.hora, l.tipo==='E' ? l.forma : l.categoria, l.obs].filter(Boolean).join(' • ');
+    return `<div class="item ${l.tipo}">
+      <div class="info">
+        <span class="tp">${l.tipo==='E'?'➕ ENTRADA':'➖ SAÍDA'}</span>
+        <div class="val">${fmt(l.valor)}</div>
+        <div class="det">${esc(det)}</div>
+      </div>
+      <button class="apagar" onclick="apagar('${l.id}')">🗑 Apagar</button>
+    </div>`;
+  }).join('');
+}
+function esc(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+async function apagar(id){
+  const l = dados.find(x=>x.id===id); if(!l) return;
+  const ok = await confirmar(`Apagar esta ${l.tipo==='E'?'ENTRADA':'SAÍDA'} de ${fmt(l.valor)}?`);
+  if(!ok) return;
+  dados = dados.filter(x=>x.id!==id); gravar(K_DADOS, dados);
+  desenharInicio(); toast('Apagado');
+}
+
+function irInicio(){ mostrar('tela-inicio'); desenharInicio(); }
+
+/* ---------- lançamento ---------- */
+let tipoAtual='E', centavos=0, escolha='';
+
+function abrirLanc(tipo){
+  tipoAtual=tipo; centavos=0; escolha=''; $('obs').value='';
+  const tela=$('tela-lanc'); tela.classList.remove('lanc-E','lanc-S'); tela.classList.add('lanc-'+tipo);
+  $('lanc-titulo').textContent = (tipo==='E' ? '➕ ENTRADA' : '➖ SAÍDA') + (diaVisto!==hojeISO() ? ' — dia '+dataBR(diaVisto).slice(0,5) : '');
+  $('pergunta').textContent = tipo==='E' ? 'Como pagou?' : 'O que foi?';
+  const ops = tipo==='E' ? FORMAS : CATEGORIAS;
+  $('chips').innerHTML = ops.map(o=>`<button class="chip" onclick="escolher(this)">${o}</button>`).join('');
+  atualizarVisor(); mostrar('tela-lanc');
+}
+function escolher(btn){
+  document.querySelectorAll('#chips .chip').forEach(c=>c.classList.remove('sel'));
+  btn.classList.add('sel'); escolha = btn.textContent;
+}
+function montarTeclado(){
+  const teclas=['1','2','3','4','5','6','7','8','9','00','0','⌫'];
+  $('teclado').innerHTML = teclas.map(k=>`<button class="${k==='⌫'?'apaga':''}" onclick="tecla('${k}')" aria-label="${k==='⌫'?'Apagar número':k}">${k==='⌫'?'⌫ Apagar':k}</button>`).join('');
+}
+function tecla(k){
+  if(k==='⌫'){ centavos = Math.floor(centavos/10); }
+  else { const novo = Number(String(centavos)+k); if(novo <= 9999999999) centavos = novo; }
+  atualizarVisor();
+}
+function atualizarVisor(){ $('visor').textContent = fmt(centavos); }
+
+function salvar(){
+  if(centavos<=0){ toast('Digite o valor'); return; }
+  const agora = new Date();
+  // lança no dia que está sendo visto (permite registrar algo esquecido de ontem)
+  const data = diaVisto;
+  const l = {
+    id: Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+    tipo: tipoAtual, valor: centavos,
+    forma: tipoAtual==='E' ? (escolha||'Não informado') : '',
+    categoria: tipoAtual==='S' ? (escolha||'Não informado') : '',
+    obs: $('obs').value.trim(),
+    data, hora: String(agora.getHours()).padStart(2,'0')+':'+String(agora.getMinutes()).padStart(2,'0'),
+    criadoEm: agora.toISOString()
+  };
+  dados.push(l);
+  if(!gravar(K_DADOS, dados)){ dados.pop(); return; }
+  toast('✔ Salvo!');
+  setTimeout(irInicio, 700);
+}
+
+/* ---------- enviar ---------- */
+const PERIODOS = [
+  {id:'dia',    nome:'Dia mostrado na tela'},
+  {id:'semana', nome:'Últimos 7 dias'},
+  {id:'mes',    nome:'Este mês'},
+  {id:'mesant', nome:'Mês passado'}
+];
+let periodoSel='dia';
+
+function intervalo(p){
+  const h = new Date();
+  if(p==='dia') return [diaVisto, diaVisto, 'Dia '+dataBR(diaVisto)];
+  if(p==='semana'){ const i=new Date(h); i.setDate(i.getDate()-6); return [isoData(i), isoData(h), 'De '+dataBR(isoData(i))+' a '+dataBR(isoData(h))]; }
+  if(p==='mes'){ const i=new Date(h.getFullYear(),h.getMonth(),1); return [isoData(i), isoData(h), 'Mês '+String(h.getMonth()+1).padStart(2,'0')+'/'+h.getFullYear()]; }
+  const i=new Date(h.getFullYear(),h.getMonth()-1,1), f=new Date(h.getFullYear(),h.getMonth(),0);
+  return [isoData(i), isoData(f), 'Mês '+String(i.getMonth()+1).padStart(2,'0')+'/'+i.getFullYear()];
+}
+function doPeriodo(){
+  const [ini,fim] = intervalo(periodoSel);
+  return dados.filter(l=>l.data>=ini && l.data<=fim).sort((a,b)=> (a.data+a.hora).localeCompare(b.data+b.hora));
+}
+function abrirEnviar(){
+  const nomeDia = diaVisto===hojeISO() ? 'Hoje ('+dataBR(diaVisto).slice(0,5)+')' : 'Dia '+dataBR(diaVisto).slice(0,5);
+  $('periodos').innerHTML = PERIODOS.map(p=>`<button class="chip ${p.id===periodoSel?'sel':''}" onclick="selPeriodo('${p.id}')">${p.id==='dia'?nomeDia:p.nome}</button>`).join('');
+  desenharPrevia();
+  const podeArquivo = !!(navigator.canShare && navigator.canShare({files:[new File(['x'],'t.csv',{type:'text/csv'})]}));
+  $('dica-envio').textContent = cfg.fone
+    ? 'O botão verde abre a conversa direto no WhatsApp. ' + (podeArquivo ? 'O botão da planilha abre a lista — toque em WhatsApp.' : '')
+    : '⚠️ Peça ao Guilherme para cadastrar o número dele em ⚙️ Ajustes.';
+  mostrar('tela-enviar');
+}
+function selPeriodo(id){ periodoSel=id; abrirEnviar(); }
+
+function desenharPrevia(){
+  const l = doPeriodo(), t = totais(l), [, , nome] = intervalo(periodoSel);
+  $('previa').innerHTML = `<b>${nome}</b><br>${l.length} lançamento(s)<br>
+    ➕ Entrou: <b>${fmt(t.e)}</b><br>➖ Saiu: <b>${fmt(t.s)}</b><br>Saldo: <b>${fmt(t.saldo)}</b>`;
+}
+
+function textoRelatorio(){
+  const l = doPeriodo(), t = totais(l), [, , nome] = intervalo(periodoSel);
+  const loja = cfg.nome ? cfg.nome.toUpperCase() : 'CAIXA DA LOJA';
+  let s = `*${loja}*\n${nome}\n\n➕ Entrou: *${fmt(t.e)}*\n➖ Saiu: *${fmt(t.s)}*\n💰 Saldo: *${fmt(t.saldo)}*\n`;
+  // Entradas por forma de pagamento
+  const porForma = {};
+  l.filter(x=>x.tipo==='E').forEach(x=>porForma[x.forma]=(porForma[x.forma]||0)+x.valor);
+  if(Object.keys(porForma).length){ s += '\n_Entradas por pagamento:_\n'; for(const k in porForma) s += `• ${k}: ${fmt(porForma[k])}\n`; }
+  // Detalhe (limita para não estourar o WhatsApp)
+  if(l.length){
+    s += '\n_Lançamentos:_\n';
+    const max = 60;
+    let diaAtual='';
+    l.slice(0,max).forEach(x=>{
+      if(x.data!==diaAtual && periodoSel!=='dia'){ diaAtual=x.data; s += `\n📅 ${dataBR(x.data)}\n`; }
+      s += `${x.tipo==='E'?'➕':'➖'} ${x.hora} ${fmt(x.valor)} ${x.tipo==='E'?x.forma:x.categoria}${x.obs?' ('+x.obs+')':''}\n`;
+    });
+    if(l.length>max) s += `\n… e mais ${l.length-max}. Veja a planilha completa.\n`;
+  }
+  return s;
+}
+
+function enviarWhats(){
+  const txt = encodeURIComponent(textoRelatorio());
+  let fone = (cfg.fone||'').replace(/\D/g,'');
+  if(fone && !fone.startsWith('55')) fone = '55'+fone;
+  const url = fone ? `https://wa.me/${fone}?text=${txt}` : `https://wa.me/?text=${txt}`;
+  window.location.href = url;
+}
+
+function csv(){
+  const l = doPeriodo();
+  const cab = ['Data','Hora','Tipo','Valor','Forma de pagamento','Categoria','Observação'];
+  const q = v => '"' + String(v).replace(/"/g,'""') + '"';
+  const linhas = l.map(x=>[dataBR(x.data), x.hora, x.tipo==='E'?'Entrada':'Saída',
+    (x.valor/100).toFixed(2).replace('.',','), x.forma, x.categoria, x.obs].map(q).join(';'));
+  return '﻿' + cab.map(q).join(';') + '\r\n' + linhas.join('\r\n');
+}
+function nomeArquivo(){
+  const [ini,fim] = intervalo(periodoSel);
+  return 'caixa_loja_' + (ini===fim ? ini : ini+'_a_'+fim) + '.csv';
+}
+async function enviarArquivo(){
+  const nome = nomeArquivo();
+  const arquivo = new File([csv()], nome, {type:'text/csv'});
+  if(navigator.canShare && navigator.canShare({files:[arquivo]})){
+    try{ await navigator.share({files:[arquivo], title:'Caixa da Loja', text:'Relatório do caixa — '+intervalo(periodoSel)[2]}); }
+    catch(e){ /* cancelou */ }
+    return;
+  }
+  baixar(arquivo, nome);
+  toast('Arquivo baixado');
+}
+function baixar(blob, nome){
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=nome;
+  document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},1000);
+}
+
+/* ---------- ajustes ---------- */
+function abrirConfig(){
+  $('cfg-fone').value = cfg.fone||''; $('cfg-nome').value = cfg.nome||'';
+  $('info-versao').textContent = `Versão ${VERSAO} • ${dados.length} lançamento(s) guardados neste celular.`;
+  mostrar('tela-config');
+}
+function salvarConfig(){
+  cfg = { fone: $('cfg-fone').value.trim(), nome: $('cfg-nome').value.trim() };
+  gravar(K_CFG, cfg); irInicio();
+}
+async function copiaSeguranca(){
+  const nome = 'caixa_loja_backup_'+hojeISO()+'.json';
+  const arq = new File([JSON.stringify({versao:VERSAO, exportadoEm:new Date().toISOString(), config:cfg, lancamentos:dados}, null, 1)], nome, {type:'application/json'});
+  if(navigator.canShare && navigator.canShare({files:[arq]})){ try{ await navigator.share({files:[arq], title:'Backup Caixa da Loja'}); }catch(e){} return; }
+  baixar(arq, nome);
+}
+
+/* ---------- início ---------- */
+montarTeclado();
+desenharInicio();
+// Se o app ficar aberto de um dia para o outro, volta para "hoje" ao reabrir
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && $('tela-inicio').classList.contains('ativa')){ diaVisto = hojeISO(); desenharInicio(); }});
+if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(()=>{}); }
+</script>
+</body>
+</html>
