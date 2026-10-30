@@ -1,7 +1,7 @@
 // Service worker: deixa o app abrir mesmo sem internet.
 // Ao publicar uma nova versão, aumente o número abaixo.
-const CACHE = 'caixa-malharia-v1';
-const ARQUIVOS = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
+const CACHE = 'caixa-malharia-v2';
+const ARQUIVOS = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './logo.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(ARQUIVOS))); self.skipWaiting(); });
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))));

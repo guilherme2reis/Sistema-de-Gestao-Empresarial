@@ -156,7 +156,7 @@
   <!-- ===== TELA INICIAL ===== -->
   <section id="tela-inicio" class="tela ativa">
     <header class="topo">
-      <h1>🧵 CAIXA DA MALHARIA</h1>
+      <h1 style="display:flex;align-items:center;gap:10px"><img src="logo.png" alt="" style="width:64px;height:64px;object-fit:contain;flex:none;background:#FFF8E1;border-radius:50%;padding:4px;border:3px solid #8A6100">CAIXA DA MALHARIA</h1>
       <button class="btn-engrenagem" onclick="abrirConfig()" aria-label="Configurações">⚙️</button>
     </header>
 
@@ -273,7 +273,7 @@
    Estrutura de cada lançamento (pensada para integrar depois):
    { id, tipo:'E'|'S', valor:centavos, forma, categoria, obs, data:'AAAA-MM-DD', hora:'HH:MM', criadoEm:ISO }
    ========================================================= */
-const VERSAO = '1.0';
+const VERSAO = '1.1';
 const K_DADOS = 'caixaMalharia.lancamentos.v1';
 const K_CFG   = 'caixaMalharia.config.v1';
 
