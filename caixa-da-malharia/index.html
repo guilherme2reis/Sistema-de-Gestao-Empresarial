@@ -1,0 +1,687 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#E0A800">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Caixa da Malharia">
+<title>Caixa da Malharia</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  :root{
+    --bg:#FFF8E1; --card:#FFFFFF; --ink:#111827; --muted:#4B5563; --line:#D1D5DB;
+    --entra:#0D47A1; --entra-soft:#E3F0FF;
+    --sai:#B34700;   --sai-soft:#FFF0E0;
+    --ok:#0D47A1;
+    --ouro:#E0A800; --ouro-esc:#8A6100; --ouro-soft:#FFECB3;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:20px;line-height:1.35}
+  body{padding:0 0 env(safe-area-inset-bottom)}
+  button{font:inherit;color:inherit;border:0;cursor:pointer}
+  .wrap{max-width:560px;margin:0 auto;padding:14px 16px 32px}
+  .tela{display:none}.tela.ativa{display:block}
+
+  header.topo{display:flex;align-items:center;justify-content:space-between;margin:4px 0 12px}
+  header.topo h1{font-size:26px;margin:0;letter-spacing:.5px}
+  header.topo{background:var(--ouro);color:#111827;margin:-14px -16px 14px;padding:14px 16px;border-bottom:4px solid var(--ouro-esc)}
+  .enviar.rel{background:var(--ouro);color:#111827;border:3px solid var(--ouro-esc);margin-bottom:10px}
+  .cab-lanc{background:var(--ouro-soft);border-radius:16px;padding:8px}
+  .btn-engrenagem{background:none;font-size:30px;padding:6px 10px;border-radius:12px}
+
+  /* Navegação de dia */
+  .dia{display:flex;align-items:center;justify-content:space-between;background:var(--card);
+    border-radius:16px;padding:8px;margin-bottom:12px;border:2px solid var(--line)}
+  .dia button{background:#E5E7EB;font-size:26px;font-weight:700;width:58px;height:58px;border-radius:12px}
+  .dia button:disabled{opacity:.3}
+  .dia .rotulo{text-align:center;font-weight:700;font-size:21px}
+  .dia .rotulo small{display:block;font-weight:400;color:var(--muted);font-size:17px}
+
+  /* Resumo */
+  .resumo{background:var(--card);border-radius:16px;padding:14px 16px;border:2px solid var(--line);margin-bottom:16px}
+  .linha{display:flex;justify-content:space-between;align-items:baseline;padding:4px 0;font-size:21px}
+  .linha b{font-size:24px}
+  .linha.ent b{color:var(--entra)} .linha.sai b{color:var(--sai)}
+  .linha.saldo{border-top:2px dashed var(--line);margin-top:6px;padding-top:10px}
+  .linha.saldo b{font-size:30px}
+
+  /* Botões principais */
+  .grandes{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+  .grande{border-radius:20px;padding:22px 8px;font-size:26px;font-weight:800;color:#fff;
+    display:flex;flex-direction:column;align-items:center;gap:4px;box-shadow:0 4px 0 rgba(0,0,0,.25)}
+  .grande:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.25)}
+  .grande .ic{font-size:52px;line-height:1;font-weight:900}
+  .grande.ent{background:var(--entra)} .grande.sai{background:var(--sai)}
+  .enviar{width:100%;background:#1F2937;color:#fff;border-radius:18px;padding:18px;font-size:23px;font-weight:700;margin-bottom:20px}
+
+  /* Lista */
+  h2{font-size:21px;margin:8px 0 10px;color:var(--muted)}
+  .item{display:flex;align-items:center;gap:10px;background:var(--card);border-radius:14px;padding:12px;
+    margin-bottom:8px;border-left:10px solid var(--line)}
+  .item.E{border-left-color:var(--entra)} .item.S{border-left-color:var(--sai)}
+  .item .tp{font-size:15px;font-weight:800;padding:3px 8px;border-radius:8px;white-space:nowrap}
+  .item.E .tp{background:var(--entra-soft);color:var(--entra)} .item.S .tp{background:var(--sai-soft);color:var(--sai)}
+  .item .info{flex:1;min-width:0}
+  .item .val{font-size:23px;font-weight:800}
+  .item .det{font-size:16px;color:var(--muted);overflow-wrap:anywhere}
+  .item .apagar{background:#F3F4F6;border:2px solid var(--line);border-radius:10px;padding:10px 12px;font-size:16px;font-weight:700}
+  .vazio{text-align:center;color:var(--muted);padding:20px;background:var(--card);border-radius:14px}
+
+  /* Tela de lançamento */
+  .cab-lanc{display:flex;align-items:center;gap:10px;margin:4px 0 12px}
+  .voltar{background:#E5E7EB;border-radius:12px;padding:12px 16px;font-size:20px;font-weight:700}
+  .cab-lanc h1{margin:0;font-size:26px}
+  .visor{background:var(--card);border:3px solid var(--line);border-radius:16px;padding:12px 16px;text-align:right;margin-bottom:10px}
+  .visor small{display:block;text-align:left;color:var(--muted);font-size:17px}
+  .visor .num{font-size:46px;font-weight:800;letter-spacing:1px}
+  .lanc-E .visor{border-color:var(--entra)} .lanc-E .visor .num{color:var(--entra)}
+  .lanc-S .visor{border-color:var(--sai)}   .lanc-S .visor .num{color:var(--sai)}
+  .teclado{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+  .teclado button{background:var(--card);border:2px solid var(--line);border-radius:14px;height:64px;font-size:30px;font-weight:700}
+  .teclado button:active{background:#E5E7EB}
+  .teclado .apaga{font-size:22px;background:#F3F4F6}
+  .pergunta{font-weight:700;margin:6px 0 8px}
+  .chips{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+  .chips .chip{font-size:18px;padding:12px 4px}
+  .chip{background:var(--card);border:3px solid var(--line);border-radius:14px;padding:14px 6px;font-size:20px;font-weight:700}
+  .chip.sel{border-color:#111827;background:#111827;color:#fff}
+  .chip.sel::before{content:"✔ "}
+  .obs{width:100%;font:inherit;font-size:20px;padding:14px;border-radius:14px;border:2px solid var(--line);margin-bottom:14px;background:var(--card)}
+  .salvar{width:100%;border-radius:18px;padding:20px;font-size:26px;font-weight:800;color:#fff;box-shadow:0 4px 0 rgba(0,0,0,.25)}
+  .lanc-E .salvar{background:var(--entra)} .lanc-S .salvar{background:var(--sai)}
+
+  /* Enviar */
+  .periodos{display:grid;gap:10px;margin-bottom:16px}
+  .periodos .chip{font-size:22px;padding:18px}
+  .previa{background:var(--card);border-radius:14px;padding:14px;border:2px solid var(--line);margin-bottom:16px;font-size:19px}
+  .acao{width:100%;border-radius:18px;padding:18px;font-size:22px;font-weight:800;margin-bottom:12px;color:#fff}
+  .acao.zap{background:#075E54} .acao.arq{background:#1F2937}
+  .dica{color:var(--muted);font-size:17px;margin-top:4px}
+
+  /* Relatórios */
+  .abas{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}
+  .abas button{padding:16px;border-radius:14px;font-size:22px;font-weight:800;background:#fff;border:3px solid var(--line)}
+  .abas button.sel{background:var(--ouro);border-color:var(--ouro-esc);color:#111827}
+  .bloco{background:var(--card);border-radius:16px;padding:12px 16px;border:2px solid var(--line);margin-bottom:14px}
+  .bloco h3{margin:0 0 6px;font-size:20px}
+  .bloco .linha{font-size:19px}
+  .bloco .linha b{font-size:20px;color:var(--ink)}
+  .mesano{display:block;width:100%;text-align:left;background:var(--card);border:2px solid var(--line);border-radius:14px;
+    padding:12px 14px;margin-bottom:8px;font-size:18px}
+  .mesano .topo2{display:flex;justify-content:space-between;align-items:baseline}
+  .mesano .topo2 b{font-size:21px}
+  .mesano .sub{color:var(--muted);font-size:16px;margin-top:2px}
+  .mesano.vazio2{opacity:.55}
+  .neg{color:var(--sai)!important}
+
+  .opc{display:block;width:100%;text-align:left;background:none;padding:10px 0;border-bottom:1px solid var(--line)}
+  .opc:last-of-type{border-bottom:0}
+  .opc-l{display:flex;justify-content:space-between;align-items:baseline;font-size:19px}
+  .opc-l b{font-size:20px}
+  .opc-sub{display:block;color:var(--muted);font-size:15px;margin-top:2px}
+  .opc.zerada{opacity:.45}
+  .barra{display:block;height:12px;background:#E5E7EB;border-radius:6px;margin-top:6px;overflow:hidden}
+  .barra-cheia{display:block;height:100%;border-radius:6px}
+  .barra-cheia.E{background:var(--entra)} .barra-cheia.S{background:var(--sai)}
+  .tp-mini{font-size:14px;font-weight:800;padding:2px 8px;border-radius:8px}
+  .tp-mini.E{background:var(--entra-soft);color:var(--entra)} .tp-mini.S{background:var(--sai-soft);color:var(--sai)}
+  .resumo .linha.saldo.ent b{color:var(--entra)} .resumo .linha.saldo.sai b{color:var(--sai)}
+  .resumo .dica{text-align:right}
+  /* Configurações */
+  label.cfg{display:block;font-weight:700;margin:12px 0 6px}
+  .cfg-input{width:100%;font:inherit;font-size:22px;padding:14px;border-radius:14px;border:2px solid var(--line)}
+  .perigo{width:100%;background:#fff;border:3px solid #7F1D1D;color:#7F1D1D;border-radius:16px;padding:14px;font-size:19px;font-weight:700;margin-top:24px}
+
+  /* Avisos */
+  .toast{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%) scale(.9);background:#111827;color:#fff;
+    padding:22px 30px;border-radius:20px;font-size:28px;font-weight:800;opacity:0;pointer-events:none;transition:.2s;z-index:50;text-align:center}
+  .toast.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  .modal-fundo{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:40;padding:16px}
+  .modal-fundo.on{display:flex}
+  .modal{background:#fff;border-radius:20px;padding:22px;max-width:460px;width:100%}
+  .modal p{font-size:22px;margin:0 0 18px}
+  .modal .bts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .modal .bts button{padding:16px;border-radius:14px;font-size:21px;font-weight:800}
+  .modal .nao{background:#E5E7EB} .modal .sim{background:#7F1D1D;color:#fff}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ===== TELA INICIAL ===== -->
+  <section id="tela-inicio" class="tela ativa">
+    <header class="topo">
+      <h1>🧵 CAIXA DA MALHARIA</h1>
+      <button class="btn-engrenagem" onclick="abrirConfig()" aria-label="Configurações">⚙️</button>
+    </header>
+
+    <div class="dia">
+      <button id="dia-ant" onclick="mudarDia(-1)" aria-label="Dia anterior">◀</button>
+      <div class="rotulo" id="dia-rotulo"></div>
+      <button id="dia-prox" onclick="mudarDia(1)" aria-label="Próximo dia">▶</button>
+    </div>
+
+    <div class="resumo">
+      <div class="linha ent"><span>➕ Entrou</span><b id="r-ent">R$ 0,00</b></div>
+      <div class="linha sai"><span>➖ Saiu</span><b id="r-sai">R$ 0,00</b></div>
+      <div class="linha saldo"><span>Saldo do dia</span><b id="r-saldo">R$ 0,00</b></div>
+    </div>
+
+    <div class="grandes">
+      <button class="grande ent" onclick="abrirLanc('E')"><span class="ic">+</span>ENTRADA</button>
+      <button class="grande sai" onclick="abrirLanc('S')"><span class="ic">−</span>SAÍDA</button>
+    </div>
+
+    <button class="enviar rel" onclick="abrirRel('mes')">📊 RELATÓRIOS (dia, mês e ano)</button>
+    <button class="enviar" onclick="abrirEnviar()">📤 ENVIAR RELATÓRIO</button>
+
+    <h2 id="lista-titulo">Lançamentos do dia</h2>
+    <div id="lista"></div>
+  </section>
+
+  <!-- ===== TELA LANÇAMENTO ===== -->
+  <section id="tela-lanc" class="tela">
+    <div class="cab-lanc">
+      <button class="voltar" onclick="irInicio()">◀ Voltar</button>
+      <h1 id="lanc-titulo">ENTRADA</h1>
+    </div>
+
+    <div class="visor"><small>Valor</small><div class="num" id="visor">R$ 0,00</div></div>
+    <div class="teclado" id="teclado"></div>
+
+    <div class="pergunta" id="pergunta"></div>
+    <div class="chips" id="chips"></div>
+
+    <input class="obs" id="obs" type="text" placeholder="Observação (se quiser)" maxlength="80" autocomplete="off">
+
+    <button class="salvar" onclick="salvar()">✔ SALVAR</button>
+  </section>
+
+  <!-- ===== TELA ENVIAR ===== -->
+  <section id="tela-enviar" class="tela">
+    <div class="cab-lanc">
+      <button class="voltar" onclick="irInicio()">◀ Voltar</button>
+      <h1>ENVIAR</h1>
+    </div>
+    <div class="pergunta">Qual período?</div>
+    <div class="periodos" id="periodos"></div>
+    <div class="previa" id="previa"></div>
+    <button class="acao zap" onclick="enviarWhats()">🟢 ENVIAR NO WHATSAPP</button>
+    <button class="acao arq" onclick="enviarArquivo()">📎 ENVIAR PLANILHA (arquivo)</button>
+    <div class="dica" id="dica-envio"></div>
+  </section>
+
+  <!-- ===== TELA RELATÓRIOS ===== -->
+  <section id="tela-rel" class="tela">
+    <div class="cab-lanc">
+      <button class="voltar" onclick="irInicio()">◀ Voltar</button>
+      <h1>📊 RELATÓRIOS</h1>
+    </div>
+    <div class="abas">
+      <button id="aba-dia" onclick="abrirRel('dia')">DIA</button>
+      <button id="aba-mes" onclick="abrirRel('mes')">MÊS</button>
+      <button id="aba-ano" onclick="abrirRel('ano')">ANO</button>
+    </div>
+    <div class="dia">
+      <button id="rel-ant" onclick="mudarRel(-1)" aria-label="Anterior">◀</button>
+      <div class="rotulo" id="rel-rotulo"></div>
+      <button id="rel-prox" onclick="mudarRel(1)" aria-label="Próximo">▶</button>
+    </div>
+    <div class="resumo" id="rel-resumo"></div>
+    <div id="rel-corpo"></div>
+    <button class="acao zap" onclick="enviarRel('zap')">🟢 ENVIAR ESTE RELATÓRIO NO WHATSAPP</button>
+    <button class="acao arq" onclick="enviarRel('arq')">📎 ENVIAR PLANILHA (arquivo)</button>
+  </section>
+
+  <!-- ===== TELA CONFIG ===== -->
+  <section id="tela-config" class="tela">
+    <div class="cab-lanc">
+      <button class="voltar" onclick="salvarConfig()">◀ Voltar</button>
+      <h1>Ajustes</h1>
+    </div>
+    <label class="cfg" for="cfg-fone">WhatsApp de quem recebe o relatório (com DDD)</label>
+    <input class="cfg-input" id="cfg-fone" type="tel" inputmode="numeric" placeholder="Ex.: 28 99999-9999">
+    <label class="cfg" for="cfg-nome">Nome da malharia</label>
+    <input class="cfg-input" id="cfg-nome" type="text" placeholder="Ex.: Tereza Malhas">
+    <button class="salvar" style="background:var(--ouro);color:#111827;margin-top:20px" onclick="salvarConfig()">✔ SALVAR AJUSTES</button>
+    <button class="perigo" onclick="copiaSeguranca()">💾 Baixar cópia de segurança</button>
+    <p class="dica" id="info-versao"></p>
+  </section>
+
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="modal-fundo" id="modal">
+  <div class="modal">
+    <p id="modal-txt"></p>
+    <div class="bts">
+      <button class="nao" onclick="fecharModal(false)">NÃO</button>
+      <button class="sim" onclick="fecharModal(true)">SIM</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   CAIXA DA MALHARIA — v1.0 (baseado no Caixa da Loja v1.2)
+   Dados ficam salvos no próprio celular (localStorage).
+   Estrutura de cada lançamento (pensada para integrar depois):
+   { id, tipo:'E'|'S', valor:centavos, forma, categoria, obs, data:'AAAA-MM-DD', hora:'HH:MM', criadoEm:ISO }
+   ========================================================= */
+const VERSAO = '1.0';
+const K_DADOS = 'caixaMalharia.lancamentos.v1';
+const K_CFG   = 'caixaMalharia.config.v1';
+
+const FORMAS = ['Dinheiro','Pix','Cartão','Fiado'];
+const CATEGORIAS = ['Leila costureira','Eliete costureira','Cristina costureira','Diroger','SP Malhas','Havana','Datex','Frete','Combustível','Aluguel','Celular','Luz','Outros'];
+
+/* ---------- armazenamento seguro ---------- */
+function ler(chave, padrao){ try{ const v = localStorage.getItem(chave); return v ? JSON.parse(v) : padrao; }catch(e){ return padrao; } }
+function gravar(chave, valor){ try{ localStorage.setItem(chave, JSON.stringify(valor)); return true; }catch(e){ alert('Não foi possível salvar. Avise o Guilherme.'); return false; } }
+if (navigator.storage && navigator.storage.persist) { navigator.storage.persist().catch(()=>{}); }
+
+let dados = ler(K_DADOS, []);
+let cfg = ler(K_CFG, { fone:'', nome:'' });
+
+/* ---------- utilidades ---------- */
+const $ = id => document.getElementById(id);
+const fmt = c => (c/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const hojeISO = () => isoData(new Date());
+function isoData(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function dataDeISO(s){ const [a,m,d] = s.split('-').map(Number); return new Date(a, m-1, d); }
+function dataBR(s){ const [a,m,d] = s.split('-'); return d+'/'+m+'/'+a; }
+const SEMANA = ['domingo','segunda','terça','quarta','quinta','sexta','sábado'];
+
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('on'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('on'),1400); }
+let _resolveModal=null;
+function confirmar(txt){ $('modal-txt').textContent=txt; $('modal').classList.add('on'); return new Promise(r=>_resolveModal=r); }
+function fecharModal(v){ $('modal').classList.remove('on'); if(_resolveModal){ _resolveModal(v); _resolveModal=null; } }
+
+function mostrar(id){ document.querySelectorAll('.tela').forEach(t=>t.classList.remove('ativa')); $(id).classList.add('ativa'); window.scrollTo(0,0); }
+
+/* ---------- tela inicial ---------- */
+let diaVisto = hojeISO();
+
+function mudarDia(n){
+  const d = dataDeISO(diaVisto); d.setDate(d.getDate()+n);
+  const novo = isoData(d);
+  if (novo > hojeISO()) return;
+  diaVisto = novo; desenharInicio();
+}
+
+function totais(lista){
+  let e=0,s=0; lista.forEach(l=>{ if(l.tipo==='E') e+=l.valor; else s+=l.valor; });
+  return {e,s,saldo:e-s};
+}
+
+function desenharInicio(){
+  const hoje = hojeISO();
+  const d = dataDeISO(diaVisto);
+  let titulo = diaVisto===hoje ? 'HOJE' : (diaVisto===isoData(new Date(Date.now()-864e5)) ? 'ONTEM' : SEMANA[d.getDay()].toUpperCase());
+  $('dia-rotulo').innerHTML = titulo + '<small>' + dataBR(diaVisto) + '</small>';
+  $('dia-prox').disabled = diaVisto >= hoje;
+
+  const doDia = dados.filter(l=>l.data===diaVisto).sort((a,b)=> b.criadoEm.localeCompare(a.criadoEm));
+  const t = totais(doDia);
+  $('r-ent').textContent = fmt(t.e);
+  $('r-sai').textContent = fmt(t.s);
+  $('r-saldo').textContent = (t.saldo<0?'− ':'') + fmt(Math.abs(t.saldo));
+
+  const lista = $('lista');
+  if(!doDia.length){ lista.innerHTML = '<div class="vazio">Nenhum lançamento neste dia.</div>'; return; }
+  lista.innerHTML = doDia.map(l=>{
+    const det = [l.hora, l.tipo==='E' ? l.forma : l.categoria, l.obs].filter(Boolean).join(' • ');
+    return `<div class="item ${l.tipo}">
+      <div class="info">
+        <span class="tp">${l.tipo==='E'?'➕ ENTRADA':'➖ SAÍDA'}</span>
+        <div class="val">${fmt(l.valor)}</div>
+        <div class="det">${esc(det)}</div>
+      </div>
+      <button class="apagar" onclick="apagar('${l.id}')">🗑 Apagar</button>
+    </div>`;
+  }).join('');
+}
+function esc(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+async function apagar(id){
+  const l = dados.find(x=>x.id===id); if(!l) return;
+  const ok = await confirmar(`Apagar esta ${l.tipo==='E'?'ENTRADA':'SAÍDA'} de ${fmt(l.valor)}?`);
+  if(!ok) return;
+  dados = dados.filter(x=>x.id!==id); gravar(K_DADOS, dados);
+  desenharInicio(); toast('Apagado');
+}
+
+function irInicio(){ mostrar('tela-inicio'); desenharInicio(); }
+
+/* ---------- lançamento ---------- */
+let tipoAtual='E', centavos=0, escolha='';
+
+function abrirLanc(tipo){
+  tipoAtual=tipo; centavos=0; escolha=''; $('obs').value='';
+  const tela=$('tela-lanc'); tela.classList.remove('lanc-E','lanc-S'); tela.classList.add('lanc-'+tipo);
+  $('lanc-titulo').textContent = (tipo==='E' ? '➕ ENTRADA' : '➖ SAÍDA') + (diaVisto!==hojeISO() ? ' — dia '+dataBR(diaVisto).slice(0,5) : '');
+  $('pergunta').textContent = tipo==='E' ? 'Como recebeu?' : 'Pagou para quem / o quê?';
+  const ops = tipo==='E' ? FORMAS : CATEGORIAS;
+  $('chips').innerHTML = ops.map(o=>`<button class="chip" onclick="escolher(this)">${o}</button>`).join('');
+  atualizarVisor(); mostrar('tela-lanc');
+}
+function escolher(btn){
+  document.querySelectorAll('#chips .chip').forEach(c=>c.classList.remove('sel'));
+  btn.classList.add('sel'); escolha = btn.textContent;
+}
+function montarTeclado(){
+  const teclas=['1','2','3','4','5','6','7','8','9','00','0','⌫'];
+  $('teclado').innerHTML = teclas.map(k=>`<button class="${k==='⌫'?'apaga':''}" onclick="tecla('${k}')" aria-label="${k==='⌫'?'Apagar número':k}">${k==='⌫'?'⌫ Apagar':k}</button>`).join('');
+}
+function tecla(k){
+  if(k==='⌫'){ centavos = Math.floor(centavos/10); }
+  else { const novo = Number(String(centavos)+k); if(novo <= 9999999999) centavos = novo; }
+  atualizarVisor();
+}
+function atualizarVisor(){ $('visor').textContent = fmt(centavos); }
+
+function salvar(){
+  if(centavos<=0){ toast('Digite o valor'); return; }
+  const agora = new Date();
+  // lança no dia que está sendo visto (permite registrar algo esquecido de ontem)
+  const data = diaVisto;
+  const l = {
+    id: Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+    tipo: tipoAtual, valor: centavos,
+    forma: tipoAtual==='E' ? (escolha||'Não informado') : '',
+    categoria: tipoAtual==='S' ? (escolha||'Não informado') : '',
+    obs: $('obs').value.trim(),
+    data, hora: String(agora.getHours()).padStart(2,'0')+':'+String(agora.getMinutes()).padStart(2,'0'),
+    criadoEm: agora.toISOString()
+  };
+  dados.push(l);
+  if(!gravar(K_DADOS, dados)){ dados.pop(); return; }
+  toast('✔ Salvo!');
+  setTimeout(irInicio, 700);
+}
+
+/* ---------- enviar ---------- */
+const PERIODOS = [
+  {id:'dia',    nome:'Dia mostrado na tela'},
+  {id:'semana', nome:'Últimos 7 dias'},
+  {id:'mes',    nome:'Este mês'},
+  {id:'mesant', nome:'Mês passado'}
+];
+let periodoSel='dia';
+
+let periodoCustom = null;
+function intervalo(p){
+  const h = new Date();
+  if(p==='custom' && periodoCustom) return [periodoCustom.ini, periodoCustom.fim, periodoCustom.nome];
+  if(p==='dia') return [diaVisto, diaVisto, 'Dia '+dataBR(diaVisto)];
+  if(p==='semana'){ const i=new Date(h); i.setDate(i.getDate()-6); return [isoData(i), isoData(h), 'De '+dataBR(isoData(i))+' a '+dataBR(isoData(h))]; }
+  if(p==='mes'){ const i=new Date(h.getFullYear(),h.getMonth(),1); return [isoData(i), isoData(h), 'Mês '+String(h.getMonth()+1).padStart(2,'0')+'/'+h.getFullYear()]; }
+  const i=new Date(h.getFullYear(),h.getMonth()-1,1), f=new Date(h.getFullYear(),h.getMonth(),0);
+  return [isoData(i), isoData(f), 'Mês '+String(i.getMonth()+1).padStart(2,'0')+'/'+i.getFullYear()];
+}
+function doPeriodo(){
+  const [ini,fim] = intervalo(periodoSel);
+  const f = periodoSel==='custom' && periodoCustom ? periodoCustom.filtro : null;
+  return dados.filter(l=>l.data>=ini && l.data<=fim && (!f || (l.tipo===f.tipo && campoGrupo(l)===f.nome))).sort((a,b)=> (a.data+a.hora).localeCompare(b.data+b.hora));
+}
+function abrirEnviar(){
+  const nomeDia = diaVisto===hojeISO() ? 'Hoje ('+dataBR(diaVisto).slice(0,5)+')' : 'Dia '+dataBR(diaVisto).slice(0,5);
+  $('periodos').innerHTML = PERIODOS.map(p=>`<button class="chip ${p.id===periodoSel?'sel':''}" onclick="selPeriodo('${p.id}')">${p.id==='dia'?nomeDia:p.nome}</button>`).join('');
+  desenharPrevia();
+  const podeArquivo = !!(navigator.canShare && navigator.canShare({files:[new File(['x'],'t.csv',{type:'text/csv'})]}));
+  $('dica-envio').textContent = cfg.fone
+    ? 'O botão verde abre a conversa direto no WhatsApp. ' + (podeArquivo ? 'O botão da planilha abre a lista — toque em WhatsApp.' : '')
+    : '⚠️ Peça ao Guilherme para cadastrar o número dele em ⚙️ Ajustes.';
+  mostrar('tela-enviar');
+}
+function selPeriodo(id){ periodoSel=id; abrirEnviar(); }
+
+function desenharPrevia(){
+  const l = doPeriodo(), t = totais(l), [, , nome] = intervalo(periodoSel);
+  $('previa').innerHTML = `<b>${nome}</b><br>${l.length} lançamento(s)<br>
+    ➕ Entrou: <b>${fmt(t.e)}</b><br>➖ Saiu: <b>${fmt(t.s)}</b><br>Saldo: <b>${fmt(t.saldo)}</b>`;
+}
+
+function textoRelatorio(){
+  const l = doPeriodo(), t = totais(l), [, , nome] = intervalo(periodoSel);
+  const loja = cfg.nome ? cfg.nome.toUpperCase() : 'CAIXA DA MALHARIA';
+  let s = `*${loja}*\n${nome}\n\n➕ Entrou: *${fmt(t.e)}*\n➖ Saiu: *${fmt(t.s)}*\n💰 Saldo: *${fmt(t.saldo)}*\n`;
+  const fil = periodoSel==='custom' && periodoCustom ? periodoCustom.filtro : null;
+  if(fil) s = `*${loja}*\n${nome}\n\n${fil.tipo==='E'?'➕ Entradas':'➖ Saídas'} em ${fil.nome}: *${fmt(t.e+t.s)}* (${l.length})\n`;
+  // Entradas por forma de pagamento
+  const porForma = {};
+  l.filter(x=>x.tipo==='E').forEach(x=>porForma[x.forma]=(porForma[x.forma]||0)+x.valor);
+  if(Object.keys(porForma).length){ s += '\n_Entradas por pagamento:_\n'; for(const k in porForma) s += `• ${k}: ${fmt(porForma[k])}\n`; }
+  const porCat = {};
+  l.filter(x=>x.tipo==='S').forEach(x=>porCat[x.categoria]=(porCat[x.categoria]||0)+x.valor);
+  if(Object.keys(porCat).length){ s += '\n_Saídas por destino:_\n'; for(const k in porCat) s += `• ${k}: ${fmt(porCat[k])}\n`; }
+  // Relatório anual: resume mês a mês em vez de listar cada lançamento
+  if(periodoSel==='custom' && relModo==='ano'){
+    const anoRel = dataDeISO(relRef).getFullYear();
+    s += '\n_Mês a mês:_\n';
+    MESES.forEach((nm,m)=>{ const i=isoData(new Date(anoRel,m,1)), f=isoData(new Date(anoRel,m+1,0));
+      const lm=l.filter(x=>x.data>=i&&x.data<=f); if(!lm.length) return; const tm=totais(lm);
+      s += periodoCustom.filtro ? `• ${nm}: *${fmt(tm.e+tm.s)}* (${lm.length})\n` : `• ${nm}: ➕ ${fmt(tm.e)} ➖ ${fmt(tm.s)} = *${fmt(tm.saldo)}*\n`; });
+    return s;
+  }
+  // Detalhe (limita para não estourar o WhatsApp)
+  if(l.length){
+    s += '\n_Lançamentos:_\n';
+    const max = 60;
+    let diaAtual='';
+    l.slice(0,max).forEach(x=>{
+      if(x.data!==diaAtual && periodoSel!=='dia'){ diaAtual=x.data; s += `\n📅 ${dataBR(x.data)}\n`; }
+      s += `${x.tipo==='E'?'➕':'➖'} ${x.hora} ${fmt(x.valor)} ${x.tipo==='E'?x.forma:x.categoria}${x.obs?' ('+x.obs+')':''}\n`;
+    });
+    if(l.length>max) s += `\n… e mais ${l.length-max}. Veja a planilha completa.\n`;
+  }
+  return s;
+}
+
+function enviarWhats(){
+  const txt = encodeURIComponent(textoRelatorio());
+  let fone = (cfg.fone||'').replace(/\D/g,'');
+  if(fone && !fone.startsWith('55')) fone = '55'+fone;
+  const url = fone ? `https://wa.me/${fone}?text=${txt}` : `https://wa.me/?text=${txt}`;
+  window.location.href = url;
+}
+
+function csv(){
+  const l = doPeriodo();
+  const cab = ['Data','Hora','Tipo','Valor','Forma de pagamento','Categoria','Observação'];
+  const q = v => '"' + String(v).replace(/"/g,'""') + '"';
+  const linhas = l.map(x=>[dataBR(x.data), x.hora, x.tipo==='E'?'Entrada':'Saída',
+    (x.valor/100).toFixed(2).replace('.',','), x.forma, x.categoria, x.obs].map(q).join(';'));
+  return '﻿' + cab.map(q).join(';') + '\r\n' + linhas.join('\r\n');
+}
+function nomeArquivo(){
+  const [ini,fim] = intervalo(periodoSel);
+  return 'caixa_malharia_' + (ini===fim ? ini : ini+'_a_'+fim) + '.csv';
+}
+async function enviarArquivo(){
+  const nome = nomeArquivo();
+  const arquivo = new File([csv()], nome, {type:'text/csv'});
+  if(navigator.canShare && navigator.canShare({files:[arquivo]})){
+    try{ await navigator.share({files:[arquivo], title:'Caixa da Malharia', text:'Relatório do caixa — '+intervalo(periodoSel)[2]}); }
+    catch(e){ /* cancelou */ }
+    return;
+  }
+  baixar(arquivo, nome);
+  toast('Arquivo baixado');
+}
+function baixar(blob, nome){
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=nome;
+  document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},1000);
+}
+
+/* ---------- relatórios: dia, mês e ano (inspirado no app da Perfumaria) ---------- */
+const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const SEM_CURTA = ['dom','seg','ter','qua','qui','sex','sáb'];
+const SEM_LONGA = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+// relModo: 'dia'|'mes'|'ano' • relRef: uma data dentro do período • relFiltro: null ou {tipo:'E'|'S', nome}
+let relModo='mes', relRef=hojeISO(), relFiltro=null;
+
+const chaveRel = (iso, modo) => iso.slice(0, {dia:10, mes:7, ano:4}[modo]);
+function relIntervalo(){
+  const d = dataDeISO(relRef);
+  let ini, fim, nome;
+  if(relModo==='dia'){ ini=fim=relRef; nome = SEM_LONGA[d.getDay()]+', '+dataBR(relRef); }
+  else if(relModo==='mes'){ ini=isoData(new Date(d.getFullYear(),d.getMonth(),1)); fim=isoData(new Date(d.getFullYear(),d.getMonth()+1,0)); nome=MESES[d.getMonth()]+' de '+d.getFullYear(); }
+  else { ini=d.getFullYear()+'-01-01'; fim=d.getFullYear()+'-12-31'; nome='Ano '+d.getFullYear(); }
+  if(relFiltro) nome += ' — ' + relFiltro.nome;
+  return [ini, fim, nome];
+}
+function noIntervalo(ini,fim,filtro){
+  return dados.filter(l=>l.data>=ini && l.data<=fim && (!filtro || (l.tipo===filtro.tipo && campoGrupo(l)===filtro.nome)))
+              .sort((a,b)=>(a.data+a.hora).localeCompare(b.data+b.hora));
+}
+const campoGrupo = l => l.tipo==='E' ? l.forma : l.categoria;
+const saldoTxt = v => (v<0?'− ':'') + fmt(Math.abs(v));
+const qtd = n => n===1 ? '1 lançamento' : n+' lançamentos';
+
+function abrirRel(modo, ref){
+  relModo=modo; if(ref) relRef=ref;
+  if(!$('tela-rel').classList.contains('ativa')){ relFiltro=null; if(!ref) relRef=hojeISO(); mostrar('tela-rel'); }
+  desenharRel(); window.scrollTo(0,0);
+}
+function mudarRel(n){
+  const d = dataDeISO(relRef);
+  if(relModo==='dia') d.setDate(d.getDate()+n);
+  else if(relModo==='mes') { d.setDate(1); d.setMonth(d.getMonth()+n); }
+  else { d.setMonth(0,1); d.setFullYear(d.getFullYear()+n); }
+  relRef = isoData(d); desenharRel();
+}
+function filtrar(tipo, nome){ relFiltro = {tipo, nome}; desenharRel(); window.scrollTo(0,0); }
+function tirarFiltro(){ relFiltro = null; desenharRel(); window.scrollTo(0,0); }
+function irParaDia(iso){ diaVisto=iso; mostrar('tela-inicio'); desenharInicio(); }
+
+// Lista fixa na ordem da tela de lançar (+ "Não informado" se existir)
+function porOpcao(lista, tipo){
+  const ops = (tipo==='E' ? FORMAS : CATEGORIAS).slice();
+  const g = {};
+  lista.filter(x=>x.tipo===tipo).forEach(x=>{ const k=campoGrupo(x); g[k]=g[k]||{total:0,n:0}; g[k].total+=x.valor; g[k].n++; });
+  Object.keys(g).forEach(k=>{ if(!ops.includes(k)) ops.push(k); });
+  return ops.map(nome=>({nome, total:(g[nome]||{}).total||0, n:(g[nome]||{}).n||0}));
+}
+function blocoOpcoes(titulo, tipo, lista){
+  const ops = porOpcao(lista, tipo), tot = ops.reduce((a,o)=>a+o.total,0);
+  return `<div class="bloco"><h3>${titulo}</h3>` + ops.map(o=>{
+    const pct = tot ? Math.round(o.total/tot*100) : 0;
+    return o.n
+      ? `<button class="opc" onclick="filtrar('${tipo}','${esc(o.nome).replace(/'/g,"\\'")}')">
+           <span class="opc-l"><span>${esc(o.nome)}</span><b>${fmt(o.total)} ›</b></span>
+           <span class="barra"><span class="barra-cheia ${tipo}" style="width:${pct}%"></span></span>
+           <span class="opc-sub">${qtd(o.n)} · ${pct}% do total</span></button>`
+      : `<div class="opc zerada"><span class="opc-l"><span>${esc(o.nome)}</span><b>${fmt(0)}</b></span></div>`;
+  }).join('') + `<p class="dica">Toque em um item para ver os detalhes.</p></div>`;
+}
+function linhaLanc(x, mostrarData){
+  const det = [mostrarData ? dataBR(x.data).slice(0,5) : x.hora, x.tipo==='E'?x.forma:x.categoria, x.obs].filter(Boolean).join(' • ');
+  return `<button class="mesano" onclick="irParaDia('${x.data}')"><div class="topo2">
+    <span class="tp-mini ${x.tipo}">${x.tipo==='E'?'➕ ENTRADA':'➖ SAÍDA'}</span><b class="${x.tipo==='S'?'neg':''}">${x.tipo==='E'?'+ ':'− '}${fmt(x.valor)}</b></div>
+    <div class="sub">${esc(det)}</div></button>`;
+}
+function agrupar(lista, tam){ const g={}; lista.forEach(x=>{ const k=x.data.slice(0,tam); (g[k]=g[k]||[]).push(x); }); return Object.keys(g).sort().map(k=>[k,g[k]]); }
+
+function desenharRel(){
+  ['dia','mes','ano'].forEach(m=>$('aba-'+m).classList.toggle('sel', relModo===m));
+  const d = dataDeISO(relRef);
+  $('rel-rotulo').innerHTML = relModo==='dia' ? SEM_LONGA[d.getDay()].toUpperCase()+'<small>'+dataBR(relRef)+'</small>'
+    : relModo==='mes' ? MESES[d.getMonth()].toUpperCase()+'<small>'+d.getFullYear()+'</small>'
+    : 'ANO<small>'+d.getFullYear()+'</small>';
+  $('rel-prox').disabled = chaveRel(relRef, relModo) >= chaveRel(hojeISO(), relModo);
+
+  const [ini,fim] = relIntervalo();
+  const l = noIntervalo(ini, fim, relFiltro), t = totais(l);
+  let h = '';
+
+  if(relFiltro){
+    const eh = relFiltro.tipo==='E';
+    $('rel-resumo').innerHTML = `<button class="voltar" style="width:100%;margin-bottom:10px" onclick="tirarFiltro()">‹ Ver tudo</button>
+      <div class="linha"><span>${eh?'➕ Entradas em':'➖ Saídas com'}</span><b>${esc(relFiltro.nome)}</b></div>
+      <div class="linha saldo ${eh?'ent':'sai'}"><span>Total</span><b>${fmt(eh?t.e:t.s)}</b></div>
+      <div class="dica">${qtd(l.length)}</div>`;
+  } else {
+    $('rel-resumo').innerHTML = `<div class="linha ent"><span>➕ Entrou</span><b>${fmt(t.e)}</b></div>
+      <div class="linha sai"><span>➖ Saiu</span><b>${fmt(t.s)}</b></div>
+      <div class="linha saldo"><span>Saldo</span><b class="${t.saldo<0?'neg':''}">${saldoTxt(t.saldo)}</b></div>`;
+  }
+
+  if(!l.length){ $('rel-corpo').innerHTML = '<div class="vazio" style="margin-bottom:14px">Nenhum lançamento neste período.</div>'; return; }
+
+  if(!relFiltro){
+    h += blocoOpcoes('➕ Entradas por pagamento', 'E', l);
+    h += blocoOpcoes('➖ Saídas por destino', 'S', l);
+  }
+
+  if(relModo==='mes'){
+    const dias = agrupar(l, 10);
+    if(!relFiltro) h += `<div class="bloco"><h3>📅 Dia a dia</h3><div class="linha"><span>Dias com movimento</span><b>${dias.length}</b></div>`
+       + `<div class="linha"><span>Média de entrada por dia</span><b>${fmt(Math.round(t.e/dias.length))}</b></div></div>`;
+    else h += '<h2>📅 Dia a dia</h2>';
+    h += dias.map(([dia,g])=>{ const td=totais(g); const dd=dataDeISO(dia);
+      const val = relFiltro ? fmt(td.e+td.s) : saldoTxt(td.saldo);
+      return `<button class="mesano" onclick="abrirRel('dia','${dia}')">
+        <div class="topo2"><span><b>${dataBR(dia).slice(0,5)}</b> ${SEM_CURTA[dd.getDay()]}</span><b class="${!relFiltro&&td.saldo<0?'neg':''}">${val}</b></div>
+        <div class="sub">${relFiltro ? qtd(g.length) : '➕ '+fmt(td.e)+' &nbsp; ➖ '+fmt(td.s)} &nbsp;›</div></button>`; }).join('');
+  } else if(relModo==='ano'){
+    const meses = agrupar(l, 7);
+    if(!relFiltro){
+      let melhor=null; meses.forEach(([k,g])=>{ const e=totais(g).e; if(!melhor||e>melhor[1]) melhor=[k,e]; });
+      h += `<div class="bloco"><h3>📆 Resumo do ano</h3>`
+         + `<div class="linha"><span>Média de entrada por mês</span><b>${fmt(Math.round(t.e/meses.length))}</b></div>`
+         + (melhor && melhor[1]>0 ? `<div class="linha"><span>Melhor mês</span><b>${MESES[Number(melhor[0].slice(5,7))-1]}</b></div>` : '') + '</div>';
+    } else h += '<h2>📆 Mês a mês</h2>';
+    const mapa = Object.fromEntries(meses);
+    h += MESES.map((nm,m)=>{ const k = d.getFullYear()+'-'+String(m+1).padStart(2,'0'); const g = mapa[k];
+      if(!g) return `<div class="mesano vazio2"><div class="topo2"><b>${nm}</b><span>—</span></div></div>`;
+      const tm = totais(g); const val = relFiltro ? fmt(tm.e+tm.s) : saldoTxt(tm.saldo);
+      return `<button class="mesano" onclick="abrirRel('mes','${k}-01')"><div class="topo2"><b>${nm}</b><b class="${!relFiltro&&tm.saldo<0?'neg':''}">${val}</b></div>
+        <div class="sub">${relFiltro ? qtd(g.length) : '➕ '+fmt(tm.e)+' &nbsp; ➖ '+fmt(tm.s)} &nbsp;›</div></button>`; }).join('');
+  }
+
+  // Lançamentos: no dia sempre; no mês/ano só quando um item está aberto
+  if(relModo==='dia' || relFiltro){
+    h += `<h2>📝 Lançamentos</h2>` + l.slice().reverse().map(x=>linhaLanc(x, relModo!=='dia')).join('');
+  }
+  $('rel-corpo').innerHTML = h;
+}
+
+function enviarRel(como){
+  const [ini,fim,nome] = relIntervalo();
+  periodoCustom = {ini, fim, nome, filtro: relFiltro};
+  const ant = periodoSel; periodoSel = 'custom';
+  try{ como==='zap' ? enviarWhats() : enviarArquivo(); } finally { setTimeout(()=>{ periodoSel = ant; }, 0); }
+}
+
+/* ---------- ajustes ---------- */
+function abrirConfig(){
+  $('cfg-fone').value = cfg.fone||''; $('cfg-nome').value = cfg.nome||'';
+  $('info-versao').textContent = `Versão ${VERSAO} • ${dados.length} lançamento(s) guardados neste celular.`;
+  mostrar('tela-config');
+}
+function salvarConfig(){
+  cfg = { fone: $('cfg-fone').value.trim(), nome: $('cfg-nome').value.trim() };
+  gravar(K_CFG, cfg); irInicio();
+}
+async function copiaSeguranca(){
+  const nome = 'caixa_malharia_backup_'+hojeISO()+'.json';
+  const arq = new File([JSON.stringify({versao:VERSAO, exportadoEm:new Date().toISOString(), config:cfg, lancamentos:dados}, null, 1)], nome, {type:'application/json'});
+  if(navigator.canShare && navigator.canShare({files:[arq]})){ try{ await navigator.share({files:[arq], title:'Backup Caixa da Malharia'}); }catch(e){} return; }
+  baixar(arq, nome);
+}
+
+/* ---------- início ---------- */
+montarTeclado();
+desenharInicio();
+// Se o app ficar aberto de um dia para o outro, volta para "hoje" ao reabrir
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && $('tela-inicio').classList.contains('ativa')){ diaVisto = hojeISO(); desenharInicio(); }});
+if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(()=>{}); }
+</script>
+</body>
+</html>

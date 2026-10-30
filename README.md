@@ -9,6 +9,7 @@ os apps sejam interligados (mesma estrutura de dados → mesmo banco).
 | App | Pasta | Para quê | Link |
 |---|---|---|---|
 | **CAIXA DA LOJA** | `caixa-da-loja/` | Entradas e saídas diárias da loja, com envio do relatório por WhatsApp | https://guilherme2reis.github.io/Sistema-de-Gestao-Empresarial/caixa-da-loja/ |
+| **CAIXA DA MALHARIA** | `caixa-da-malharia/` | Entradas e saídas da malharia; saídas por costureira, fornecedor e conta fixa | https://guilherme2reis.github.io/Sistema-de-Gestao-Empresarial/caixa-da-malharia/ |
 
 ## Módulos previstos
 Cadastro · Vendas/Pedidos · Custos · Formação de preço · Contas a pagar · Despesas · Financeiro/Fluxo de caixa · Estoque/Produção · Dashboard · Inteligência/IA
