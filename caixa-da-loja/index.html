@@ -98,6 +98,22 @@
   .acao.zap{background:#075E54} .acao.arq{background:#1F2937}
   .dica{color:var(--muted);font-size:17px;margin-top:4px}
 
+  /* Relatórios */
+  .abas{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+  .abas button{padding:16px;border-radius:14px;font-size:22px;font-weight:800;background:#fff;border:3px solid var(--line)}
+  .abas button.sel{background:#4A148C;border-color:#4A148C;color:#fff}
+  .bloco{background:var(--card);border-radius:16px;padding:12px 16px;border:2px solid var(--line);margin-bottom:14px}
+  .bloco h3{margin:0 0 6px;font-size:20px}
+  .bloco .linha{font-size:19px}
+  .bloco .linha b{font-size:20px;color:var(--ink)}
+  .mesano{display:block;width:100%;text-align:left;background:var(--card);border:2px solid var(--line);border-radius:14px;
+    padding:12px 14px;margin-bottom:8px;font-size:18px}
+  .mesano .topo2{display:flex;justify-content:space-between;align-items:baseline}
+  .mesano .topo2 b{font-size:21px}
+  .mesano .sub{color:var(--muted);font-size:16px;margin-top:2px}
+  .mesano.vazio2{opacity:.55}
+  .neg{color:var(--sai)!important}
+
   /* Configurações */
   label.cfg{display:block;font-weight:700;margin:12px 0 6px}
   .cfg-input{width:100%;font:inherit;font-size:22px;padding:14px;border-radius:14px;border:2px solid var(--line)}
@@ -143,6 +159,7 @@
       <button class="grande sai" onclick="abrirLanc('S')"><span class="ic">−</span>SAÍDA</button>
     </div>
 
+    <button class="enviar" style="background:#4A148C;margin-bottom:10px" onclick="abrirRel('mes')">📊 RELATÓRIOS (mês e ano)</button>
     <button class="enviar" onclick="abrirEnviar()">📤 ENVIAR RELATÓRIO</button>
 
     <h2 id="lista-titulo">Lançamentos do dia</h2>
@@ -181,6 +198,31 @@
     <div class="dica" id="dica-envio"></div>
   </section>
 
+  <!-- ===== TELA RELATÓRIOS ===== -->
+  <section id="tela-rel" class="tela">
+    <div class="cab-lanc">
+      <button class="voltar" onclick="irInicio()">◀ Voltar</button>
+      <h1>📊 RELATÓRIOS</h1>
+    </div>
+    <div class="abas">
+      <button id="aba-mes" onclick="abrirRel('mes')">MÊS</button>
+      <button id="aba-ano" onclick="abrirRel('ano')">ANO</button>
+    </div>
+    <div class="dia">
+      <button id="rel-ant" onclick="mudarRel(-1)" aria-label="Anterior">◀</button>
+      <div class="rotulo" id="rel-rotulo"></div>
+      <button id="rel-prox" onclick="mudarRel(1)" aria-label="Próximo">▶</button>
+    </div>
+    <div class="resumo">
+      <div class="linha ent"><span>➕ Entrou</span><b id="rel-ent"></b></div>
+      <div class="linha sai"><span>➖ Saiu</span><b id="rel-sai"></b></div>
+      <div class="linha saldo"><span>Saldo</span><b id="rel-saldo"></b></div>
+    </div>
+    <div id="rel-corpo"></div>
+    <button class="acao zap" onclick="enviarRel('zap')">🟢 ENVIAR ESTE RELATÓRIO NO WHATSAPP</button>
+    <button class="acao arq" onclick="enviarRel('arq')">📎 ENVIAR PLANILHA (arquivo)</button>
+  </section>
+
   <!-- ===== TELA CONFIG ===== -->
   <section id="tela-config" class="tela">
     <div class="cab-lanc">
@@ -216,7 +258,7 @@
    Estrutura de cada lançamento (pensada para integrar depois):
    { id, tipo:'E'|'S', valor:centavos, forma, categoria, obs, data:'AAAA-MM-DD', hora:'HH:MM', criadoEm:ISO }
    ========================================================= */
-const VERSAO = '1.0';
+const VERSAO = '1.1';
 const K_DADOS = 'caixaLoja.lancamentos.v1';
 const K_CFG   = 'caixaLoja.config.v1';
 
@@ -357,8 +399,10 @@ const PERIODOS = [
 ];
 let periodoSel='dia';
 
+let periodoCustom = null;
 function intervalo(p){
   const h = new Date();
+  if(p==='custom' && periodoCustom) return [periodoCustom.ini, periodoCustom.fim, periodoCustom.nome];
   if(p==='dia') return [diaVisto, diaVisto, 'Dia '+dataBR(diaVisto)];
   if(p==='semana'){ const i=new Date(h); i.setDate(i.getDate()-6); return [isoData(i), isoData(h), 'De '+dataBR(isoData(i))+' a '+dataBR(isoData(h))]; }
   if(p==='mes'){ const i=new Date(h.getFullYear(),h.getMonth(),1); return [isoData(i), isoData(h), 'Mês '+String(h.getMonth()+1).padStart(2,'0')+'/'+h.getFullYear()]; }
@@ -395,6 +439,17 @@ function textoRelatorio(){
   const porForma = {};
   l.filter(x=>x.tipo==='E').forEach(x=>porForma[x.forma]=(porForma[x.forma]||0)+x.valor);
   if(Object.keys(porForma).length){ s += '\n_Entradas por pagamento:_\n'; for(const k in porForma) s += `• ${k}: ${fmt(porForma[k])}\n`; }
+  const porCat = {};
+  l.filter(x=>x.tipo==='S').forEach(x=>porCat[x.categoria]=(porCat[x.categoria]||0)+x.valor);
+  if(Object.keys(porCat).length){ s += '\n_Saídas por tipo:_\n'; for(const k in porCat) s += `• ${k}: ${fmt(porCat[k])}\n`; }
+  // Relatório anual: resume mês a mês em vez de listar cada lançamento
+  if(periodoSel==='custom' && relModo==='ano'){
+    s += '\n_Mês a mês:_\n';
+    MESES.forEach((nm,m)=>{ const i=isoData(new Date(relAno,m,1)), f=isoData(new Date(relAno,m+1,0));
+      const lm=l.filter(x=>x.data>=i&&x.data<=f); if(!lm.length) return; const tm=totais(lm);
+      s += `• ${nm}: ➕ ${fmt(tm.e)} ➖ ${fmt(tm.s)} = *${fmt(tm.saldo)}*\n`; });
+    return s;
+  }
   // Detalhe (limita para não estourar o WhatsApp)
   if(l.length){
     s += '\n_Lançamentos:_\n';
@@ -443,6 +498,83 @@ async function enviarArquivo(){
 function baixar(blob, nome){
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=nome;
   document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},1000);
+}
+
+/* ---------- relatórios mensal e anual ---------- */
+const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const SEM_CURTA = ['dom','seg','ter','qua','qui','sex','sáb'];
+let relModo='mes', relAno=new Date().getFullYear(), relMes=new Date().getMonth();
+
+function relIntervalo(){
+  if(relModo==='ano') return [relAno+'-01-01', relAno+'-12-31', 'Ano '+relAno];
+  const ini = isoData(new Date(relAno, relMes, 1)), fim = isoData(new Date(relAno, relMes+1, 0));
+  return [ini, fim, MESES[relMes]+' de '+relAno];
+}
+function noIntervalo(ini,fim){ return dados.filter(l=>l.data>=ini && l.data<=fim).sort((a,b)=>(a.data+a.hora).localeCompare(b.data+b.hora)); }
+const saldoTxt = v => (v<0?'− ':'') + fmt(Math.abs(v));
+
+function abrirRel(modo){ relModo=modo; desenharRel(); if(!$('tela-rel').classList.contains('ativa')) mostrar('tela-rel'); }
+function mudarRel(n){
+  if(relModo==='ano'){ relAno+=n; }
+  else { relMes+=n; if(relMes<0){relMes=11;relAno--;} if(relMes>11){relMes=0;relAno++;} }
+  desenharRel();
+}
+function abrirMes(m){ relModo='mes'; relMes=m; desenharRel(); window.scrollTo(0,0); }
+function irParaDia(iso){ diaVisto=iso; mostrar('tela-inicio'); desenharInicio(); }
+
+function desenharRel(){
+  const hoje=new Date();
+  $('aba-mes').classList.toggle('sel', relModo==='mes');
+  $('aba-ano').classList.toggle('sel', relModo==='ano');
+  const [ini,fim,nome] = relIntervalo();
+  $('rel-rotulo').innerHTML = relModo==='ano' ? 'ANO<small>'+relAno+'</small>' : MESES[relMes].toUpperCase()+'<small>'+relAno+'</small>';
+  $('rel-prox').disabled = relModo==='ano' ? relAno>=hoje.getFullYear() : (relAno>hoje.getFullYear() || (relAno===hoje.getFullYear() && relMes>=hoje.getMonth()));
+  const l = noIntervalo(ini,fim), t = totais(l);
+  $('rel-ent').textContent = fmt(t.e); $('rel-sai').textContent = fmt(t.s);
+  $('rel-saldo').textContent = saldoTxt(t.saldo); $('rel-saldo').classList.toggle('neg', t.saldo<0);
+
+  let h = '';
+  if(!l.length){ $('rel-corpo').innerHTML = '<div class="vazio" style="margin-bottom:14px">Nenhum lançamento neste período.</div>'; return; }
+
+  // Entradas por pagamento e saídas por tipo
+  const agrupa = (tipo, campo) => { const g={}; l.filter(x=>x.tipo===tipo).forEach(x=>g[x[campo]]=(g[x[campo]]||0)+x.valor); return Object.entries(g).sort((a,b)=>b[1]-a[1]); };
+  const fp = agrupa('E','forma'), ct = agrupa('S','categoria');
+  if(fp.length) h += '<div class="bloco"><h3>➕ Entradas por pagamento</h3>' + fp.map(([k,v])=>`<div class="linha"><span>${esc(k)}</span><b>${fmt(v)}</b></div>`).join('') + '</div>';
+  if(ct.length) h += '<div class="bloco"><h3>➖ Saídas por tipo</h3>' + ct.map(([k,v])=>`<div class="linha"><span>${esc(k)}</span><b>${fmt(v)}</b></div>`).join('') + '</div>';
+
+  if(relModo==='mes'){
+    // Dia a dia (só dias com movimento)
+    const dias = {};
+    l.forEach(x=>{ (dias[x.data]=dias[x.data]||[]).push(x); });
+    const ord = Object.keys(dias).sort();
+    const nDias = ord.length;
+    h += `<div class="bloco"><h3>📅 Dia a dia</h3><div class="linha"><span>Dias com movimento</span><b>${nDias}</b></div>`
+       + `<div class="linha"><span>Média de entrada por dia</span><b>${fmt(Math.round(t.e/nDias))}</b></div></div>`;
+    h += ord.map(d=>{ const td=totais(dias[d]); const dd=dataDeISO(d);
+      return `<button class="mesano" onclick="irParaDia('${d}')">
+        <div class="topo2"><span><b>${dataBR(d).slice(0,5)}</b> ${SEM_CURTA[dd.getDay()]}</span><b class="${td.saldo<0?'neg':''}">${saldoTxt(td.saldo)}</b></div>
+        <div class="sub">➕ ${fmt(td.e)} &nbsp; ➖ ${fmt(td.s)} &nbsp;›</div></button>`; }).join('');
+  } else {
+    // Mês a mês
+    let melhor=-1, melhorV=-Infinity;
+    const porMes = MESES.map((_,m)=>{ const i=isoData(new Date(relAno,m,1)), f=isoData(new Date(relAno,m+1,0)); const lm=l.filter(x=>x.data>=i&&x.data<=f); const tm=totais(lm); if(lm.length && tm.e>melhorV){melhorV=tm.e;melhor=m;} return {m,n:lm.length,...tm}; });
+    const comMov = porMes.filter(x=>x.n).length;
+    h += `<div class="bloco"><h3>📆 Resumo do ano</h3>`
+       + `<div class="linha"><span>Média de entrada por mês</span><b>${fmt(Math.round(t.e/Math.max(comMov,1)))}</b></div>`
+       + (melhor>=0 ? `<div class="linha"><span>Melhor mês</span><b>${MESES[melhor]}</b></div>` : '') + '</div>';
+    h += porMes.map(x=> x.n
+      ? `<button class="mesano" onclick="abrirMes(${x.m})"><div class="topo2"><b>${MESES[x.m]}</b><b class="${x.saldo<0?'neg':''}">${saldoTxt(x.saldo)}</b></div>
+         <div class="sub">➕ ${fmt(x.e)} &nbsp; ➖ ${fmt(x.s)} &nbsp;›</div></button>`
+      : `<div class="mesano vazio2"><div class="topo2"><b>${MESES[x.m]}</b><span>—</span></div></div>`).join('');
+  }
+  $('rel-corpo').innerHTML = h;
+}
+
+function enviarRel(como){
+  const [ini,fim,nome] = relIntervalo();
+  periodoCustom = {ini, fim, nome};
+  const ant = periodoSel; periodoSel = 'custom';
+  try{ como==='zap' ? enviarWhats() : enviarArquivo(); } finally { setTimeout(()=>{ periodoSel = ant; }, 0); }
 }
 
 /* ---------- ajustes ---------- */
